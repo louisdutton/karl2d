@@ -24,27 +24,6 @@ import hm "handle_map"
 // SETUP, WINDOW MANAGEMENT AND FRAME MANAGEMENT //
 //-----------------------------------------------//
 
-when ODIN_OS == .Windows {
-	DEFAULT_BACKEND :: RENDER_BACKEND_INTERFACE_D3D11
-} else {
-	DEFAULT_BACKEND :: RENDER_BACKEND_INTERFACE_GL
-}
-
-CUSTOM_BACKEND_STR :: #config(KARL2D_BACKEND, "")
-
-when CUSTOM_BACKEND_STR != "" {
-	when CUSTOM_BACKEND_STR == "gl" {
-		BACKEND :: RENDER_BACKEND_INTERFACE_GL
-	} else when CUSTOM_BACKEND_STR == "d3d11" {
-		BACKEND :: RENDER_BACKEND_INTERFACE_D3D11
-	} else {
-		#panic(CUSTOM_BACKEND_STR + " is not a valid value for KARL2D_BACKEND. Available backends are: gl, d3d11")
-		BACKEND :: DEFAULT_BACKEND
-	}
-} else {
-	BACKEND :: DEFAULT_BACKEND
-}
-
 // Opens a window and initializes some internal state. The internal state will use `allocator` for
 // all dynamically allocated memory. The return value can be ignored unless you need to later call
 // `set_internal_state`.
@@ -143,6 +122,7 @@ shutdown :: proc() {
 // Clear the backbuffer with supplied color.
 clear :: proc(color: Color) {
 	rb.clear(color)
+	s.depth = s.depth_start
 }
 
 // Present the backbuffer. Call at end of frame to make everything you've drawn appear on the screen.
@@ -150,7 +130,6 @@ present :: proc() {
 	draw_current_batch()
 	rb.present()
 	free_all(s.frame_allocator)
-	s.depth = s.depth_start
 }
 
 // Call at start or end of frame to process all events that have arrived to the window.
@@ -278,6 +257,10 @@ set_window_flags :: proc(flags: Window_Flags) {
 draw_current_batch :: proc() {
 	update_font(s.batch_font)
 
+	if s.vertex_buffer_cpu_used == 0 {
+		return
+	}
+
 	shader := s.batch_shader
 
 	mvp := s.proj_matrix * s.view_matrix
@@ -294,7 +277,6 @@ draw_current_batch :: proc() {
 				dst := (^matrix[4,4]f32)(&shader.constants_data[constant.offset])
 				dst^ = mvp
 			} 
-			
 		}
 	}
 
@@ -893,7 +875,6 @@ load_shader :: proc(vertex_shader_source: string, fragment_shader_source: string
 
 		if constant_desc.name != "" {
 			shd.constant_lookup[strings.clone(constant_desc.name, s.allocator)] = loc
-			log.info(constant_desc.name)
 
 			switch constant_desc.name {
 			case "mvp":
@@ -959,10 +940,15 @@ set_shader :: proc(shader: Maybe(Shader)) {
 }
 
 set_shader_constant :: proc(shd: Shader, loc: Shader_Constant_Location, val: any) {
+	if shd.handle == SHADER_NONE {
+		log.error("Invalid shader")
+		return
+	}
+
 	draw_current_batch()
 
-	if loc.offset + loc.size >= len(shd.constants_data) {
-		log.errorf("Constant with offset %v and size %v is out of bounds", loc.offset, loc.size)
+	if loc.offset + loc.size > len(shd.constants_data) {
+		log.errorf("Constant with offset %v and size %v is out of bounds. Buffer ends at %v", loc.offset, loc.size, len(shd.constants_data))
 		return
 	}
 
@@ -1679,7 +1665,7 @@ set_font :: proc(fh: Font_Handle) {
 }
 
 DEPTH_START :: -0.99
-DEPTH_INCREMENT :: (1.0/20000.0) // I've stolen this number from raylib.
+DEPTH_INCREMENT :: (1.0/10000000.0)
 
 _ :: jpeg
 _ :: bmp
