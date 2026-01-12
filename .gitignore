@@ -1,15 +1,3 @@
-*.sublime-project
-*.sublime-workspace
-raylib/
-*.pdb
-*.exe
-*.rdi
 *.bin
-!/.sublime/karl2d.sublime-project
-tests/*/build
-tests/*/bin
-examples/*/build
-examples/*/bin
-examples/raylib_ports/*/build
-examples/raylib_ports/*/bin
-karl2d.doc.compare.odin
+.direnv
+*.dSYM
