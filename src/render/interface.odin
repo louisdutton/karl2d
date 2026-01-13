@@ -1,78 +1,11 @@
 package render
 
-import hm "../handle_map"
-import "../window"
-import "base:runtime"
+import vk "vulkan"
 
-Render_Target_Handle :: distinct hm.Handle
+Render_Target_Handle :: vk.Render_Target_Handle
 
 RENDER_TARGET_NONE :: Render_Target_Handle{}
 FILESYSTEM_SUPPORTED :: ODIN_OS != .JS && ODIN_OS != .Freestanding
-
-Render_Backend_Interface :: struct {
-	state_size:                     proc() -> int,
-	init:                           proc(
-		state: rawptr,
-		window_handle: window.Handle,
-		swapchain_width, swapchain_height: int,
-		allocator := context.allocator,
-	),
-	shutdown:                       proc(),
-	clear:                          proc(render_target: Render_Target_Handle, color: Color),
-	present:                        proc(),
-	draw:                           proc(
-		shader: Shader,
-		render_target: Render_Target_Handle,
-		bound_textures: []Texture_Handle,
-		scissor: Maybe(Rect),
-		blend: Blend_Mode,
-		vertex_buffer: []u8,
-	),
-	set_internal_state:             proc(state: rawptr),
-	create_texture:                 proc(
-		width: int,
-		height: int,
-		format: Pixel_Format,
-	) -> Texture_Handle,
-	load_texture:                   proc(
-		data: []u8,
-		width: int,
-		height: int,
-		format: Pixel_Format,
-	) -> Texture_Handle,
-	update_texture:                 proc(handle: Texture_Handle, data: []u8, rect: Rect) -> bool,
-	destroy_texture:                proc(handle: Texture_Handle),
-	texture_needs_vertical_flip:    proc(handle: Texture_Handle) -> bool,
-	create_render_texture:          proc(
-		width: int,
-		height: int,
-	) -> (
-		Texture_Handle,
-		Render_Target_Handle,
-	),
-	destroy_render_target:          proc(render_texture: Render_Target_Handle),
-	set_texture_filter:             proc(
-		handle: Texture_Handle,
-		scale_down_filter: Texture_Filter,
-		scale_up_filter: Texture_Filter,
-		mip_filter: Texture_Filter,
-	),
-	load_shader:                    proc(
-		vertex_shader_data: []byte,
-		pixel_shader_data: []byte,
-		desc_allocator: runtime.Allocator,
-		layout_formats: []Pixel_Format = {},
-	) -> (
-		handle: Shader_Handle,
-		desc: Shader_Desc,
-	),
-	destroy_shader:                 proc(shader: Shader_Handle),
-	resize_swapchain:               proc(width, height: int),
-	get_swapchain_width:            proc() -> int,
-	get_swapchain_height:           proc() -> int,
-	default_shader_vertex_source:   proc() -> []byte,
-	default_shader_fragment_source: proc() -> []byte,
-}
 
 Texture :: struct {
 	// The render-backend specific texture identifier.
@@ -93,13 +26,7 @@ Load_Texture_Option :: enum {
 
 Load_Texture_Options :: bit_set[Load_Texture_Option]
 
-Blend_Mode :: enum {
-	Alpha,
-
-	// Requires the alpha-channel to be multiplied into texture RGB channels. You can automatically
-	// do this using the `Premultiply_Alpha` option when loading a texture.
-	Premultiplied_Alpha,
-}
+Blend_Mode :: vk.Blend_Mode
 
 // A render texture is a texture that you can draw into, instead of drawing to the screen. Create
 // one using `create_render_texture`.
@@ -113,7 +40,4 @@ Render_Texture :: struct {
 	render_target: Render_Target_Handle,
 }
 
-Texture_Filter :: enum {
-	Point, // Similar to "nearest neighbor". Pixly texture scaling.
-	Linear, // Smoothed texture scaling.
-}
+Texture_Filter :: vk.Texture_Filter

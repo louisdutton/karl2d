@@ -1,6 +1,5 @@
 package render
 
-import hm "../handle_map"
 import "core:log"
 import "core:mem"
 import "core:os"
@@ -8,7 +7,9 @@ import "core:reflect"
 import "core:slice"
 import "core:strings"
 
-Shader_Handle :: distinct hm.Handle
+import vk "vulkan"
+
+Shader_Handle :: vk.Shader_Handle
 
 SHADER_NONE :: Shader_Handle{}
 
@@ -59,12 +60,7 @@ Shader_Input_Value_Override :: struct {
 	used: int,
 }
 
-Shader_Input_Type :: enum {
-	F32,
-	Vec2,
-	Vec3,
-	Vec4,
-}
+Shader_Input_Type :: vk.Shader_Input_Type
 
 Shader_Builtin_Constant :: enum {
 	View_Projection_Matrix,
@@ -77,39 +73,13 @@ Shader_Default_Inputs :: enum {
 	Color,
 }
 
-Shader_Input :: struct {
-	name:     string,
-	register: int,
-	type:     Shader_Input_Type,
-	format:   Pixel_Format,
-}
+Shader_Input :: vk.Shader_Input
 
-Pixel_Format :: enum {
-	Unknown,
-	RGBA_32_Float,
-	RGB_32_Float,
-	RG_32_Float,
-	R_32_Float,
-	RGBA_8_Norm,
-	RG_8_Norm,
-	R_8_Norm,
-	R_8_UInt,
-}
+Pixel_Format :: vk.Pixel_Format
 
-Shader_Constant_Desc :: struct {
-	name: string,
-	size: int,
-}
-
-Shader_Texture_Bindpoint_Desc :: struct {
-	name: string,
-}
-
-Shader_Desc :: struct {
-	constants:          []Shader_Constant_Desc,
-	texture_bindpoints: []Shader_Texture_Bindpoint_Desc,
-	inputs:             []Shader_Input,
-}
+Shader_Constant_Desc :: vk.Shader_Constant_Desc
+Shader_Texture_Bindpoint_Desc :: vk.Shader_Texture_Bindpoint_Desc
+Shader_Desc :: vk.Shader_Desc
 
 // Load a shader from a vertex and fragment shader file. If the vertex and fragment shaders live in
 // the same file, then pass it twice.
@@ -157,7 +127,7 @@ load_shader_from_bytes :: proc(
 	layout_formats: []Pixel_Format = {},
 	allocator := context.allocator,
 ) -> Shader {
-	handle, desc := s.rb.load_shader(
+	handle, desc := vk.load_shader(
 		vertex_shader_bytes,
 		fragment_shader_bytes,
 		context.temp_allocator,
@@ -243,7 +213,7 @@ load_shader_from_bytes :: proc(
 
 // Destroy a shader previously loaded using `load_shader_from_file` or `load_shader_from_bytes`
 destroy_shader :: proc(shader: Shader, allocator := context.allocator) {
-	s.rb.destroy_shader(shader.handle)
+	vk.destroy_shader(shader.handle)
 
 	delete(shader.constants_data, allocator)
 	delete(shader.constants, allocator)

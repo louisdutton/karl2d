@@ -6,7 +6,6 @@ import ce "../darwin/cocoa_extras"
 import "base:runtime"
 import NS "core:sys/darwin/Foundation"
 
-@(private = "package")
 WINDOW_INTERFACE_COCOA :: Interface {
 	state_size            = cocoa_state_size,
 	init                  = cocoa_init,

@@ -39,14 +39,30 @@
 
     devShells = forEachSupportedSystem (
       {pkgs}:
-        with pkgs; {
+        with pkgs; let
+          dev = writeShellScriptBin "dev" ''
+            export DYLD_LIBRARY_PATH="${lib.makeLibraryPath [vulkan-loader moltenvk]}"
+            export VK_LAYER_PATH="${vulkan-validation-layers}/share/vulkan/explicit_layer.d"
+            export VK_ICD_FILENAMES="${moltenvk}/share/vulkan/icd.d/MoltenVK_icd.json"
+            odin build src/render/vulkan -out:vulkan && ./vulkan
+          '';
+        in {
           default = mkShell {
             nativeBuildInputs = [
               odin
             ];
 
             buildInputs = [
+              vulkan-headers
+              vulkan-loader
               vulkan-tools
+              vulkan-validation-layers
+              glfw
+              moltenvk
+
+              # shaders
+              glslang
+              shaderc
             ];
 
             packages = [
@@ -58,9 +74,14 @@
               nixd
               alejandra
               vscode-json-languageserver
+
+              # dev tools
+              dev
             ];
 
-            XDG_SESSION_TYPE = "x11"; # wayland can't handle fullscreen
+            VK_LAYER_PATH = "${vulkan-validation-layers}/share/vulkan/explicit_layer.d";
+            VK_ICD_FILENAMES = "${moltenvk}/share/vulkan/icd.d/MoltenVK_icd.json";
+            DYLD_LIBRARY_PATH = lib.makeLibraryPath [vulkan-loader moltenvk];
           };
         }
     );

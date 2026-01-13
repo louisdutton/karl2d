@@ -33,7 +33,11 @@ init :: proc(
 
 	s = new(State, allocator, loc)
 	s.allocator = allocator
-	s.win = window.WINDOW_INTERFACE_X11
+	when ODIN_OS == .Darwin {
+		s.win = window.WINDOW_INTERFACE_COCOA
+	} else when ODIN_OS == .Linux {
+		s.win = window.WINDOW_INTERFACE_X11
+	}
 
 	// We alloc memory for the windowing backend and pass the blob of memory to it.
 	window_state_alloc_error: runtime.Allocator_Error

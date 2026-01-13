@@ -3,6 +3,8 @@ package render
 import "core:math"
 import "core:math/linalg"
 
+import vk "vulkan"
+
 // Draw a colored rectangle. The rectangles have their (x, y) position in the top-left corner of the
 // rectangle.
 draw_rect :: proc(r: Rect, c: Color) {
@@ -295,7 +297,7 @@ draw_texture_ex :: proc(
 	//
 	// Could we do something with the projection matrix while drawing into those render textures
 	// instead? I tried that, but couldn't get it to work.
-	if s.rb.texture_needs_vertical_flip(tex.handle) {
+	if vk.texture_needs_vertical_flip(tex.handle) {
 		flip_y = !flip_y
 	}
 
@@ -373,13 +375,14 @@ draw_current_batch :: proc() {
 		shader.texture_bindpoints[def_tex_idx] = s.batch_texture
 	}
 
-	s.rb.draw(
-		shader,
+	vk.draw(
+		shader.handle,
 		s.batch_render_target,
 		shader.texture_bindpoints,
 		s.batch_scissor,
 		s.batch_blend_mode,
 		s.vertex_buffer_cpu[:s.vertex_buffer_cpu_used],
+		shader.constants_data,
 	)
 	s.vertex_buffer_cpu_used = 0
 }

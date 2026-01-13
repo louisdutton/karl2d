@@ -1,9 +1,10 @@
 package render
 
-import hm "../handle_map"
 import "../window"
 import "core:image"
 import "core:log"
+
+import vk "vulkan"
 
 // statically register image loaders by importing them
 import "core:image/jpeg"
@@ -11,12 +12,12 @@ import "core:image/png"
 _ :: png
 _ :: jpeg
 
-Texture_Handle :: distinct hm.Handle
+Texture_Handle :: vk.Texture_Handle
 TEXTURE_NONE :: Texture_Handle{}
 
 // Create an empty texture.
 create_texture :: proc(width: int, height: int, format: Pixel_Format) -> Texture {
-	h := s.rb.create_texture(width, height, format)
+	h := vk.create_texture(width, height, format)
 
 	return {handle = h, width = width, height = height}
 }
@@ -86,7 +87,7 @@ load_texture_from_bytes_raw :: proc(
 	height: int,
 	format: Pixel_Format,
 ) -> Texture {
-	backend_tex := s.rb.load_texture(bytes[:], width, height, format)
+	backend_tex := vk.load_texture(bytes[:], width, height, format)
 
 	if backend_tex == TEXTURE_NONE {
 		return {}
@@ -104,12 +105,12 @@ get_texture_rect :: proc(t: Texture) -> Rect {
 // Update a texture with new pixels. `bytes` is the new pixel data. `rect` is the rectangle in
 // `tex` where the new pixels should end up.
 update_texture :: proc(tex: Texture, bytes: []u8, rect: Rect) -> bool {
-	return s.rb.update_texture(tex.handle, bytes, rect)
+	return vk.update_texture(tex.handle, bytes, rect)
 }
 
 // Destroy a texture, freeing up any memory it has used on the GPU.
 destroy_texture :: proc(tex: Texture) {
-	s.rb.destroy_texture(tex.handle)
+	vk.destroy_texture(tex.handle)
 }
 
 // Controls how a texture should be filtered. You can choose "point" or "linear" filtering. Which
@@ -130,7 +131,7 @@ set_texture_filter_ex :: proc(
 	scale_up_filter: Texture_Filter,
 	mip_filter: Texture_Filter,
 ) {
-	s.rb.set_texture_filter(t.handle, scale_down_filter, scale_up_filter, mip_filter)
+	vk.set_texture_filter(t.handle, scale_down_filter, scale_up_filter, mip_filter)
 }
 
 //-----------------//
@@ -140,7 +141,7 @@ set_texture_filter_ex :: proc(
 // Create a texture that you can render into. Meaning that you can draw into it instead of drawing
 // onto the screen. Use `set_render_texture` to enable this Render Texture for drawing.
 create_render_texture :: proc(width: int, height: int) -> Render_Texture {
-	texture, render_target := s.rb.create_render_texture(width, height)
+	texture, render_target := vk.create_render_texture(width, height)
 
 	return {
 		texture = {handle = texture, width = width, height = height},
@@ -150,8 +151,8 @@ create_render_texture :: proc(width: int, height: int) -> Render_Texture {
 
 // Destroy a Render_Texture previously created using `create_render_texture`.
 destroy_render_texture :: proc(render_texture: Render_Texture) {
-	s.rb.destroy_texture(render_texture.texture.handle)
-	s.rb.destroy_render_target(render_texture.render_target)
+	vk.destroy_texture(render_texture.texture.handle)
+	vk.destroy_render_target(render_texture.render_target)
 }
 
 // Make all rendering go into a texture instead of onto the screen. Create the render texture using

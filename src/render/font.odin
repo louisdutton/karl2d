@@ -4,6 +4,8 @@ import "core:os"
 import "core:slice"
 import fs "vendor:fontstash"
 
+import vk "vulkan"
+
 Font :: distinct int
 Font_Data :: struct {
 	atlas:            Texture,
@@ -42,7 +44,7 @@ load_font_from_bytes :: proc(data: []u8) -> Font {
 		Font_Data {
 			fontstash_handle = font,
 			atlas = {
-				handle = s.rb.create_texture(
+				handle = vk.create_texture(
 					FONT_DEFAULT_ATLAS_SIZE,
 					FONT_DEFAULT_ATLAS_SIZE,
 					.RGBA_8_Norm,
@@ -63,7 +65,7 @@ destroy_font :: proc(font: Font) {
 	}
 
 	f := &s.fonts[font]
-	s.rb.destroy_texture(f.atlas.handle)
+	vk.destroy_texture(f.atlas.handle)
 
 	// TODO fontstash has no "destroy font" proc... I should make my own version of fontstash
 	delete(s.fs.fonts[f.fontstash_handle].glyphs)
@@ -217,7 +219,7 @@ _update_font :: proc(fh: Font, allocator := context.allocator) {
 			expanded_pixels[dst_pixel_idx] = {255, 255, 255, src}
 		}
 
-		s.rb.update_texture(font.atlas.handle, slice.reinterpret([]u8, expanded_pixels), r)
+		vk.update_texture(font.atlas.handle, slice.reinterpret([]u8, expanded_pixels), r)
 	}
 }
 

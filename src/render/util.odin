@@ -1,6 +1,7 @@
 package render
 
 import p "../primatives"
+import vk "vulkan"
 
 Vec2 :: p.Vec2
 Vec3 :: p.Vec3
@@ -20,7 +21,7 @@ set_scissor_rect :: proc(scissor_rect: Maybe(Rect)) {
 // be cleared instead.
 clear :: proc(color := LIGHT_BLUE) {
 	draw_current_batch()
-	s.rb.clear(s.batch_render_target, color)
+	vk.clear(s.batch_render_target, color)
 }
 
 
@@ -35,11 +36,11 @@ clear :: proc(color := LIGHT_BLUE) {
 // make sure that all rendering has been sent off to the GPU (as it calls `draw_current_batch()`).
 present :: proc() {
 	draw_current_batch()
-	s.rb.present()
+	vk.present()
 }
 
 // TODO: doc
 resize :: proc(width, height: int) {
-	s.rb.resize_swapchain(width, height)
+	vk.resize_swapchain(width, height)
 	s.proj_matrix = make_default_projection(width, height)
 }
